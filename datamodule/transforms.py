@@ -12,6 +12,8 @@ import torch
 import torchaudio
 import torchvision
 
+from .video_distortion import FRAME_DISTORTION_TYPES, distortion_vid
+
 
 NOISE_FILENAME = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "babble_noise.wav"
@@ -86,10 +88,34 @@ class AddNoise(torch.nn.Module):
         return noisy_speech.t()
 
 
+class RandomVideoDistortion(torch.nn.Module):
+    """
+    Training-time visual-robustness augmentation, mirroring AddNoise's role
+    for audio: every sample gets a randomly chosen distortion type and a
+    randomly chosen severity level, re-rolled on every call (i.e. every
+    sample, every epoch). Level 0 means "no distortion" -- the visual analog
+    of AddNoise's 999999 dB "clean" draw in its SNR pool -- so roughly 1 in
+    (len(levels)) samples pass through undistorted.
+    """
+    def __init__(self, types=FRAME_DISTORTION_TYPES, levels=(0, 1, 2, 3, 4, 5)):
+        super().__init__()
+        self.types = types
+        self.levels = levels
+
+    def forward(self, video):
+        # video: T x C x H x W, RGB, pre-normalization (0-255 range).
+        level = random.choice(self.levels)
+        if level == 0:
+            return video
+        dist_type = random.choice(self.types)
+        return distortion_vid(video, dist_type=dist_type, dist_level=level)
+
+
 class VideoTransform:
     def __init__(self, subset):
         if subset == "train":
             self.video_pipeline = torch.nn.Sequential(
+                RandomVideoDistortion(),
                 FunctionalModule(lambda x: x / 255.0),
                 torchvision.transforms.RandomCrop(88),
                 torchvision.transforms.Grayscale(),
