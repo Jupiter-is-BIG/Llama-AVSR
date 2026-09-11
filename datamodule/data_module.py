@@ -222,13 +222,17 @@ class DataModule_LLM(LightningDataModule):
                 "test", snr_target=self.args.decode_snr_target,
                 is_avhubert_audio = self.is_avhubert_audio,
                 ),
-            video_transform=VideoTransform("test"),
+            video_transform=VideoTransform(
+                "test",
+                dist_type=getattr(self.args, "vid_dist_type", None),
+                dist_level=getattr(self.args, "vid_dist_level", 3),
+            ),
             downsample_ratio=self.downsample_ratio,
             is_avhubert_audio = self.is_avhubert_audio,
             single_projector_avhubert = self.args.single_projector_avhubert,
         )
         dataloader = torch.utils.data.DataLoader(
-            dataset, 
+            dataset,
             batch_size=None,
             collate_fn= lambda x: collate_LLM(x, self.tokenizer, self.args.modality, is_trainval= False),
         )

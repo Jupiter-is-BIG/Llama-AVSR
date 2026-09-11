@@ -196,9 +196,24 @@ def parse_args():
     parser.add_argument(
         "--decode-snr-target",
         type=float,
-        default= 999999,  
+        default= 999999,
         help="Level of signal-to-noise ratio (SNR)",
         choices= [999999,5,2,0,-2,-5]
+    )
+    parser.add_argument(
+        "--vid-dist-type",
+        default="none",
+        type=str,
+        choices=["none", "CC", "BW", "GNC", "GB", "JPEG", "random"],
+        help="Visual distortion applied to the video modality at test time (mirrors "
+             "--decode-snr-target for audio). none=no distortion.",
+    )
+    parser.add_argument(
+        "--vid-dist-level",
+        default=3,
+        type=int,
+        choices=[0, 1, 2, 3, 4, 5],
+        help="Severity of the visual distortion (0=clean/no distortion, 1=mildest, 5=most severe).",
     )
     parser.add_argument(
         "--debug",
